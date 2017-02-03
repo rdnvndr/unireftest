@@ -1,0 +1,89 @@
+# This file is used to ignore files which are generated
+# ----------------------------------------------------------------------------
+
+*~
+*.autosave
+*.a
+*.core
+*.moc
+*.o
+*.obj
+*.orig
+*.rej
+*.so
+*_pch.h.cpp
+*_resource.rc
+*.qm
+.#*
+*.*#
+core
+!core/
+tags
+.DS_Store
+*.debug
+Makefile*
+*.prl
+*.app
+moc_*.cpp
+ui_*.h
+qrc_*.cpp
+Thumbs.db
+.directory
+*.orig
+
+# Version project
+version.h
+
+# qtcreator generated files
+*.pro.user*
+*.qmlproject.user*
+*.pluginspec
+
+# xemacs temporary files
+*.flc
+
+# Vim temporary files
+.*.swp
+
+# Visual Studio generated files
+*.ib_pdb_index
+*.idb
+*.ilk
+*.pdb
+*.sln
+*.suo
+*.vcproj
+*vcproj.*.*.user
+*.ncb
+
+# MinGW generated files
+*.Debug
+*.Release
+
+# translation related:
+share/qtcreator/translations/*_tr.h
+share/qtcreator/translations/qtcreator_untranslated.ts
+
+# Directories to ignore
+# ---------------------
+
+debug
+lib/*
+lib64/*
+release
+.rcc
+.pch
+doc/doxygen/html
+qch/*
+
+# Binaries
+# --------
+bin
+build
+distrib
+
+# Out file
+# ---------
+mssql
+oracle
+sqlnet.log

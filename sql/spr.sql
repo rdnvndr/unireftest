@@ -1,0 +1,7 @@
+WITH cls AS (
+   SELECT t1.*, 0 AS LEVEL FROM BO_CLASSES AS t1 
+   WHERE t1.GUID = 'wAgjesx5tcaAJxHuubSGfd'
+   UNION ALL
+   SELECT t2.*, t3.LEVEL + 1  AS LEVEL FROM BO_CLASSES AS t2 inner join cls AS t3 ON t2.GUID=t3.GUIDPARENT
+)
+SELECT * FROM cls
