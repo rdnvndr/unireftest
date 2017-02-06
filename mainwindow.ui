@@ -72,6 +72,8 @@
      <string>Инструменты</string>
     </property>
     <addaction name="runAction"/>
+    <addaction name="separator"/>
+    <addaction name="showQueryAction"/>
    </widget>
    <addaction name="fileMenu"/>
    <addaction name="toolMenu"/>
@@ -124,6 +126,14 @@
    </property>
    <property name="text">
     <string>Выход</string>
+   </property>
+  </action>
+  <action name="showQueryAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Показать запрос</string>
    </property>
   </action>
  </widget>
