@@ -49,21 +49,20 @@ void MainWindow::onActionExec()
     QString findSql("");
 
     QSqlQuery metaDataQuery(
-                "SELECT BO_CLASSES.NAMECLASS AS NAMECLASS, \
-                        BO_CLASSES.NAMETABLE AS NAMETABLE, \
-                        BO_CLASSES.FGUID AS CLS_FGUID, \
-                        BO_ATTR_CLASSES.NAMEATTR AS NAMEATTR, \
-                        BO_ATTR_CLASSES.NAMEFIELD AS NAMEFIELD, \
-                        BO_ATTR_CLASSES.NAMESCREEN AS NAMESCREEN\
-                FROM BO_ATTR_CLASSES \
-                LEFT OUTER JOIN BO_CLASSES \
-                ON BO_CLASSES.GUID = BO_ATTR_CLASSES.FGUID \
-                INNER JOIN BO_ATTR_CLASSES AS t3 \
-                ON t3.NAMEFIELD = 'GUID' AND t3.FGUID = BO_CLASSES.GUID \
-                   AND not t3.NAMEFIELD is NULL \
-                WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1' \
-                ORDER BY CLS_FGUID, NAMETABLE");
-
+                "SELECT BO_CLASSES.NAMECLASS AS NAMECLASS,\n"
+                       "BO_CLASSES.NAMETABLE AS NAMETABLE,\n"
+                       "BO_CLASSES.FGUID AS CLS_FGUID,\n"
+                       "BO_ATTR_CLASSES.NAMEATTR AS NAMEATTR,\n"
+                       "BO_ATTR_CLASSES.NAMEFIELD AS NAMEFIELD,\n"
+                       "BO_ATTR_CLASSES.NAMESCREEN AS NAMESCREEN\n"
+                "FROM BO_ATTR_CLASSES \n"
+                "LEFT OUTER JOIN BO_CLASSES\n"
+                "ON BO_CLASSES.GUID = BO_ATTR_CLASSES.FGUID\n"
+                "INNER JOIN BO_ATTR_CLASSES AS t3\n"
+                "ON t3.NAMEFIELD = 'GUID' AND t3.FGUID = BO_CLASSES.GUID\n"
+                "AND not t3.NAMEFIELD is NULL\n"
+                "WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1'\n"
+                "ORDER BY CLS_FGUID, NAMETABLE");
 
     while (metaDataQuery.next()) {
         QString nameTable = metaDataQuery.value("NAMETABLE").toString();
@@ -88,13 +87,7 @@ void MainWindow::onActionExec()
     if (table != "") {
         findSql += sql.arg(fields).arg(table).arg(expr);
     }
-    findSql = "SELECT TOP 10 t0.*, t3.OBJECTGUID FROM ("+ findSql +") AS t0\n"
-            "LEFT JOIN (SELECT t1.* FROM BO_ACCEPTED_LINKS AS t1\n"
-            "INNER JOIN BO_ACCEPTED_LINKS AS t2\n"
-            "ON t1.FID = t2.FID  AND t2.ID % 2 = 1 AND t1.ID % 2 = 0\n"
-            "AND t2.OBJECTGUID IN ('y2RZerqA8wZAM1Ggqnw4dc')\n"
-            ") AS t3 ON t0.GUID = t3.OBJECTGUID\n"
-            "ORDER BY t3.OBJECTGUID DESC";
+    findSql = "SELECT TOP 10 t0.* FROM ("+ findSql +") AS t0";
     ExecFindQuery(findSql);
     QDateTime finish = QDateTime::currentDateTime();
     int msecs = finish.time().msecsTo(start.time());
