@@ -88,12 +88,19 @@ void MainWindow::onActionExec()
     if (table != "") {
         findSql += sql.arg(fields).arg(table).arg(expr);
     }
-    findSql = "SELECT TOP 10 * FROM ("+ findSql +") AS t";
+    findSql = "SELECT TOP 10 t0.*, t3.OBJECTGUID FROM ("+ findSql +") AS t0\n"
+            "LEFT JOIN (SELECT t1.* FROM BO_ACCEPTED_LINKS AS t1\n"
+            "INNER JOIN BO_ACCEPTED_LINKS AS t2\n"
+            "ON t1.FID = t2.FID  AND t2.ID % 2 = 1 AND t1.ID % 2 = 0\n"
+            "AND t2.OBJECTGUID IN ('y2RZerqA8wZAM1Ggqnw4dc')\n"
+            ") AS t3 ON t0.GUID = t3.OBJECTGUID\n"
+            "ORDER BY t3.OBJECTGUID DESC";
     ExecFindQuery(findSql);
     QDateTime finish = QDateTime::currentDateTime();
     int msecs = finish.time().msecsTo(start.time());
 
-//    ui->logPlainText->appendPlainText(findSql);
+    if (ui->showQueryAction->isChecked())
+        ui->logPlainText->appendPlainText(findSql);
     ui->logPlainText->appendPlainText(
                 QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
 }
