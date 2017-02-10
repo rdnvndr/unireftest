@@ -15,8 +15,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->connectAction, &QAction::triggered, this, &MainWindow::onActionConnect);
     connect(ui->runAction, &QAction::triggered, this, &MainWindow::onActionExec);
     connect(ui->exitAction, &QAction::triggered, this, &MainWindow::close);
-    m_model = new QSqlQueryModel(this);
+    m_model = new QStringListModel(this);
     ui->resultTableView->setModel(m_model);
+
 }
 
 MainWindow::~MainWindow()
@@ -27,6 +28,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::onActionExec()
 {
+    m_count = 0;
+    m_list.clear();
+
     ui->logPlainText->clear();
     if (!QSqlDatabase::database().isOpen()) {
         ui->logPlainText->appendPlainText(
@@ -45,7 +49,8 @@ void MainWindow::onActionExec()
     QString fields("");
     QString expr("");
     QString table("");
-    QString sql("SELECT GUID, %1 AS NAME FROM %2 WHERE %3\n");
+    QString sql("SELECT TOP "
+                + QString(MAX_COUNT) + " GUID, %1 AS NAME FROM %2 WHERE %3\n");
     QString findSql("");
 
     QSqlQuery metaDataQuery(
@@ -64,15 +69,15 @@ void MainWindow::onActionExec()
                 "WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1'\n"
                 "ORDER BY CLS_FGUID, NAMETABLE");
 
-    while (metaDataQuery.next()) {
+    while (metaDataQuery.next() && m_count < MAX_COUNT) {
         QString nameTable = metaDataQuery.value("NAMETABLE").toString();
         QString nameField = metaDataQuery.value("NAMEFIELD").toString();
 
         if (nameField != "SCREEN_NAME" && !nameField.isEmpty()) {
             if (table != nameTable) {
                 if (table != "") {
-                    findSql += sql.arg(fields).arg(table).arg(expr);
-                    sql = "UNION ALL SELECT GUID, %1 AS NAME FROM %2 WHERE %3\n";
+                    findSql = sql.arg(fields).arg(table).arg(expr);
+                    ExecFindQuery(findSql);
                 }
                 fields = "CAST(" + nameField + " AS varchar(250))";
                 expr = nameField + " like " + findString;
@@ -84,18 +89,17 @@ void MainWindow::onActionExec()
         }
     }
 
-    if (table != "") {
-        findSql += sql.arg(fields).arg(table).arg(expr);
+    if (table != "" && m_count < MAX_COUNT) {
+        findSql = sql.arg(fields).arg(table).arg(expr);
+        ExecFindQuery(findSql);
     }
-    findSql = "SELECT TOP 10 t0.* FROM ("+ findSql +") AS t0";
-    ExecFindQuery(findSql);
+
     QDateTime finish = QDateTime::currentDateTime();
     int msecs = finish.time().msecsTo(start.time());
 
-    if (ui->showQueryAction->isChecked())
-        ui->logPlainText->appendPlainText(findSql);
     ui->logPlainText->appendPlainText(
                 QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
+    m_model->setStringList(m_list);
 }
 
 void MainWindow::onActionConnect()
@@ -108,7 +112,13 @@ void MainWindow::onActionConnect()
 
 void MainWindow::ExecFindQuery(const QString &strQuery)
 {
-    m_model->setQuery(strQuery);
+    QSqlQuery query(strQuery);
+    while (query.next() && m_count < MAX_COUNT) {
+        m_count++;
+        m_list.append(query.value("NAME").toString());
+    }
+    if (ui->showQueryAction->isChecked())
+        ui->logPlainText->appendPlainText(strQuery);
 }
 
 void MainWindow::closeEvent(QCloseEvent *)

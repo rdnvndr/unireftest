@@ -36,6 +36,9 @@
       </property>
       <widget class="QPlainTextEdit" name="logPlainText"/>
       <widget class="QTableView" name="resultTableView">
+       <attribute name="horizontalHeaderVisible">
+        <bool>false</bool>
+       </attribute>
        <attribute name="horizontalHeaderDefaultSectionSize">
         <number>200</number>
        </attribute>

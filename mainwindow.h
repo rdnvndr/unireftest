@@ -2,11 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QSqlQueryModel>
+#include <QStringListModel>
 
 namespace Ui {
 class MainWindow;
 }
+
+const int MAX_COUNT = 10;
 
 class MainWindow : public QMainWindow
 {
@@ -25,7 +27,9 @@ private:
     void ExecFindQuery(const QString &strQuery);
 
     Ui::MainWindow *ui;
-    QSqlQueryModel *m_model;
+    QStringListModel *m_model;
+    QStringList m_list;
+    int m_count;
 };
 
 #endif // MAINWINDOW_H
