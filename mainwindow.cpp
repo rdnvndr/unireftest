@@ -49,8 +49,8 @@ void MainWindow::onActionExec()
     QString fields("");
     QString expr("");
     QString table("");
-    QString sql("SELECT TOP "
-                + QString(MAX_COUNT) + " GUID, %1 AS NAME FROM %2 WHERE %3\n");
+    QString sql("SELECT TOP " + QString("%1").arg(MAX_COUNT)
+                + " GUID, %1 AS NAME FROM %2 WHERE %3\n");
     QString findSql("");
 
     QSqlQuery metaDataQuery(
