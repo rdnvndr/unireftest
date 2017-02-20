@@ -45,7 +45,9 @@ void MainWindow::onActionExec()
     ui->logPlainText->appendPlainText("Запуск запроса\n");
     QDateTime start = QDateTime::currentDateTime();
 
-    QString findString = "'%" + ui->findLineEdit->text() + "%'";
+    QString findString = "'%"
+            + ui->findLineEdit->text().simplified().replace(' ', '%')
+            + "%'";
     QString fields("");
     QString expr("");
     QString table("");
