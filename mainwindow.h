@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QStringListModel>
+#include <QSemaphore>
+#include <QDateTime>
 
 namespace Ui {
 class MainWindow;
@@ -22,6 +24,7 @@ public:
 private slots:
     void onActionExec();
     void onActionConnect();
+    void onExit(QStringList values);
 
 private:
     void ExecFindQuery(const QString &strQuery);
@@ -30,6 +33,8 @@ private:
     QStringListModel *m_model;
     QStringList m_list;
     int m_count;
+    QDateTime m_start;
+    QDateTime m_finish;
 };
 
 #endif // MAINWINDOW_H

@@ -5,7 +5,7 @@
 #include <QSqlError>
 #include <QMessageBox>
 #include <QSqlQuery>
-#include <QDateTime>
+#include "querythread.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -17,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->exitAction, &QAction::triggered, this, &MainWindow::close);
     m_model = new QStringListModel(this);
     ui->resultTableView->setModel(m_model);
-
 }
 
 MainWindow::~MainWindow()
@@ -43,7 +42,7 @@ void MainWindow::onActionExec()
     }
 
     ui->logPlainText->appendPlainText("Запуск запроса\n");
-    QDateTime start = QDateTime::currentDateTime();
+    m_start = QDateTime::currentDateTime();
 
     QString findString = "'%"
             + ui->findLineEdit->text().simplified().replace(' ', '%')
@@ -96,12 +95,7 @@ void MainWindow::onActionExec()
         ExecFindQuery(findSql);
     }
 
-    QDateTime finish = QDateTime::currentDateTime();
-    int msecs = finish.time().msecsTo(start.time());
 
-    ui->logPlainText->appendPlainText(
-                QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
-    m_model->setStringList(m_list);
 }
 
 void MainWindow::onActionConnect()
@@ -112,13 +106,29 @@ void MainWindow::onActionConnect()
     return;
 }
 
+void MainWindow::onExit(QStringList values)
+{
+    if (m_count < MAX_COUNT) {
+        int count = values.count();
+        if (count > 0) {
+            m_count += count;
+            m_list += values;
+            m_model->setStringList(m_list);
+            m_finish = QDateTime::currentDateTime();
+            int msecs = m_finish.time().msecsTo(m_start.time());
+            ui->logPlainText->appendPlainText(
+                        QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
+        }
+    }
+}
+
 void MainWindow::ExecFindQuery(const QString &strQuery)
 {
-    QSqlQuery query(strQuery);
-    while (query.next() && m_count < MAX_COUNT) {
-        m_count++;
-        m_list.append(query.value("NAME").toString());
-    }
+    QueryThread *queryThread = new QueryThread(QSqlDatabase::database());
+    queryThread->setQueryText(strQuery);
+    connect(queryThread, &QueryThread::resultReady, this, &MainWindow::onExit);
+    connect(queryThread, &QueryThread::finished, queryThread, &QObject::deleteLater);
+    queryThread->start();
     if (ui->showQueryAction->isChecked())
         ui->logPlainText->appendPlainText(strQuery);
 }
