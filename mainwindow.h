@@ -5,6 +5,7 @@
 #include <QStringListModel>
 #include <QSemaphore>
 #include <QDateTime>
+#include <QMutex>
 
 namespace Ui {
 class MainWindow;

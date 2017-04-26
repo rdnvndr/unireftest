@@ -4,7 +4,7 @@
 #include <QThread>
 #include <QObject>
 #include <QSqlDatabase>
-#include <QSemaphore>
+#include <QMutex>
 
 class QueryThread : public QThread
 {
