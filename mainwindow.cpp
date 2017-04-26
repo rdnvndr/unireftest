@@ -27,8 +27,12 @@ MainWindow::~MainWindow()
 
 void MainWindow::onActionExec()
 {
+    m_mutex.lock();
     m_count = 0;
+    m_mutex.unlock();
+
     m_list.clear();
+    m_model->setStringList(m_list);
 
     ui->logPlainText->clear();
     if (!QSqlDatabase::database().isOpen()) {
@@ -69,8 +73,14 @@ void MainWindow::onActionExec()
                 "AND not t3.NAMEFIELD is NULL\n"
                 "WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1'\n"
                 "ORDER BY CLS_FGUID, NAMETABLE");
+    metaDataQuery.setForwardOnly(true);
 
-    while (metaDataQuery.next() && m_count < MAX_COUNT) {
+    while (metaDataQuery.next()) {
+        m_mutex.lock();
+        if (m_count >= MAX_COUNT) {
+            m_mutex.unlock();
+            break;
+        } else m_mutex.unlock();
         QString nameTable = metaDataQuery.value("NAMETABLE").toString();
         QString nameField = metaDataQuery.value("NAMEFIELD").toString();
 
@@ -90,9 +100,13 @@ void MainWindow::onActionExec()
         }
     }
 
-    if (table != "" && m_count < MAX_COUNT) {
-        findSql = sql.arg(fields).arg(table).arg(expr);
-        ExecFindQuery(findSql);
+    if (table != "") {
+        m_mutex.lock();
+        if (m_count < MAX_COUNT) {
+            m_mutex.unlock();
+            findSql = sql.arg(fields).arg(table).arg(expr);
+            ExecFindQuery(findSql);
+        } else m_mutex.unlock();
     }
 
 
@@ -106,26 +120,23 @@ void MainWindow::onActionConnect()
     return;
 }
 
-void MainWindow::onExit(QStringList values)
+void MainWindow::onExit(QString value)
 {
-    if (m_count < MAX_COUNT) {
-        int count = values.count();
-        if (count > 0) {
-            m_count += count;
-            m_list += values;
-            m_model->setStringList(m_list);
-            m_finish = QDateTime::currentDateTime();
-            int msecs = m_finish.time().msecsTo(m_start.time());
-            ui->logPlainText->appendPlainText(
-                        QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
-        }
-    }
+        m_list.append(value);
+        m_model->setStringList(m_list);
+        m_finish = QDateTime::currentDateTime();
+        int msecs = m_finish.time().msecsTo(m_start.time());
+        ui->logPlainText->appendPlainText(
+                    QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
 }
 
 void MainWindow::ExecFindQuery(const QString &strQuery)
 {
     QueryThread *queryThread = new QueryThread(QSqlDatabase::database());
     queryThread->setQueryText(strQuery);
+    queryThread->setMutex(&m_mutex);
+    queryThread->setCount(&m_count);
+
     connect(queryThread, &QueryThread::resultReady, this, &MainWindow::onExit);
     connect(queryThread, &QueryThread::finished, queryThread, &QObject::deleteLater);
     queryThread->start();

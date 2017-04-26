@@ -24,7 +24,7 @@ public:
 private slots:
     void onActionExec();
     void onActionConnect();
-    void onExit(QStringList values);
+    void onExit(QString value);
 
 private:
     void ExecFindQuery(const QString &strQuery);
@@ -35,6 +35,7 @@ private:
     int m_count;
     QDateTime m_start;
     QDateTime m_finish;
+    QMutex m_mutex;
 };
 
 #endif // MAINWINDOW_H

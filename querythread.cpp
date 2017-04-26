@@ -4,6 +4,8 @@
 #include <QStringList>
 #include <QVariant>
 
+const int MAX_COUNT = 10;
+
 QueryThread::QueryThread(QSqlDatabase db, QObject *parent): QThread(parent)
 {
     m_driverName = db.driverName();
@@ -32,13 +34,24 @@ void QueryThread::run()
         }
 
         QSqlQuery *query = new QSqlQuery(db);
-        bool ret = query->prepare(m_queryText);
-        ret = query->exec();
-        QStringList list;
+        if (!query->prepare(m_queryText))
+            return;
+        query->setForwardOnly(true);
+        if (!query->exec())
+            return;
+
         while (query->next()) {
-            list.append(query->value("NAME").toString());
+            m_mutex->lock();
+            if (*m_count < MAX_COUNT) {
+                (*m_count)++;
+                m_mutex->unlock();
+                emit resultReady(query->value("NAME").toString());
+            } else {
+                m_mutex->unlock();
+                break;
+            }
+
         }
-        emit resultReady(list);
         query->finish();
         delete query;
         db.close();
@@ -54,5 +67,15 @@ QString QueryThread::queryText() const
 void QueryThread::setQueryText(const QString &queryText)
 {
     m_queryText = queryText;
+}
+
+void QueryThread::setCount(int *count)
+{
+    m_count = count;
+}
+
+void QueryThread::setMutex(QMutex *value)
+{
+    m_mutex = value;
 }
 

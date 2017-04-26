@@ -16,8 +16,11 @@ public:
     QString queryText() const;
     void setQueryText(const QString &queryText);
 
+    void setCount(int *count);
+    void setMutex(QMutex *value);
+
 signals:
-    void resultReady(QStringList values);
+    void resultReady(QString value);
 
 private:
     QString m_driverName;
@@ -27,6 +30,9 @@ private:
     QString m_userName;
     QString m_password;
     QString m_queryText;
+
+    QMutex *m_mutex;
+    int *m_count;
 };
 
 #endif // QUERYTHREAD_H
