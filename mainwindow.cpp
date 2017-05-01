@@ -73,7 +73,7 @@ void MainWindow::onActionExec()
                 "AND not t3.NAMEFIELD is NULL\n"
                 "WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1'\n"
                 "ORDER BY CLS_FGUID, NAMETABLE");
-    metaDataQuery.setForwardOnly(true);
+//    metaDataQuery.setForwardOnly(true);
 
     while (metaDataQuery.next()) {
         m_mutex.lock();

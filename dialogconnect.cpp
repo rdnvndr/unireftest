@@ -61,11 +61,13 @@ void DialogConnect::onClickButtonOk()
         QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
     }
 
-    QSqlDatabase db = QSqlDatabase::addDatabase("QODBC");
+//    QSqlDatabase db = QSqlDatabase::addDatabase("QODBC");
+    QSqlDatabase db = QSqlDatabase::addDatabase("QTDS");
     db.setHostName(editHostname->text());
-    db.setDatabaseName(QString("%1;%2;%3").arg("DRIVER={SQL Server}")
-                       .arg("DATABASE=" + editDatabase->text())
-                       .arg("SERVER=" + editHostname->text()));
+//    db.setDatabaseName(QString("%1;%2;%3").arg("DRIVER={SQL Server}")
+//                       .arg("DATABASE=" + editDatabase->text())
+//                       .arg("SERVER=" + editHostname->text()));
+    db.setDatabaseName(editDatabase->text());
     db.setPort(spinBoxPort->value());
     db.setUserName(editUsername->text());
     db.setPassword(editPassword->text());
