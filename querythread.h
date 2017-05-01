@@ -6,6 +6,8 @@
 #include <QSqlDatabase>
 #include <QMutex>
 
+const int MAX_COUNT = 10;
+
 class QueryThread : public QThread
 {
     Q_OBJECT

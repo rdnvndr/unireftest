@@ -11,8 +11,6 @@ namespace Ui {
 class MainWindow;
 }
 
-const int MAX_COUNT = 10;
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT

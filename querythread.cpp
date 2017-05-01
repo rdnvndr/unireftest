@@ -4,8 +4,6 @@
 #include <QStringList>
 #include <QVariant>
 
-const int MAX_COUNT = 10;
-
 QueryThread::QueryThread(QSqlDatabase db, QObject *parent): QThread(parent)
 {
     m_driverName = db.driverName();
