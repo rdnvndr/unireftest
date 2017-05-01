@@ -5,7 +5,6 @@
 #include <QSqlError>
 #include <QMessageBox>
 #include <QSqlQuery>
-#include "querythread.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -27,10 +26,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::onActionExec()
 {
-    m_mutex.lock();
-    m_count = 0;
-    m_mutex.unlock();
-
     m_list.clear();
     m_model->setStringList(m_list);
 
@@ -48,14 +43,10 @@ void MainWindow::onActionExec()
     ui->logPlainText->appendPlainText("Запуск запроса\n");
     m_start = QDateTime::currentDateTime();
 
-    QString findString = "'%"
-            + ui->findLineEdit->text().simplified().replace(' ', '%')
-            + "%'";
     QString fields("");
-    QString expr("");
     QString table("");
-    QString sql("SELECT TOP " + QString("%1").arg(MAX_COUNT)
-                + " GUID, %1 AS NAME FROM %2 WHERE %3\n");
+    QString sql("ALTER TABLE %1 ADD showme VARCHAR(256) NULL;\n"
+                "EXEC('UPDATE %1 SET showme = %2')");
     QString findSql("");
 
     QSqlQuery metaDataQuery(
@@ -76,37 +67,64 @@ void MainWindow::onActionExec()
     metaDataQuery.setForwardOnly(true);
 
     while (metaDataQuery.next()) {
-        m_mutex.lock();
-        if (m_count >= MAX_COUNT) {
-            m_mutex.unlock();
-            break;
-        } else m_mutex.unlock();
         QString nameTable = metaDataQuery.value("NAMETABLE").toString();
         QString nameField = metaDataQuery.value("NAMEFIELD").toString();
 
         if (nameField != "SCREEN_NAME" && !nameField.isEmpty()) {
             if (table != nameTable) {
                 if (table != "") {
-                    findSql = sql.arg(fields).arg(table).arg(expr);
+                    findSql = sql.arg(table).arg(fields);
                     ExecFindQuery(findSql);
+                    QSqlQuery query;
+                    if (query.prepare("SELECT CONSTRAINT_NAME "
+                                       "FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS "
+                                       "WHERE TABLE_NAME='"+ table
+                                       +"' AND CONSTRAINT_TYPE='PRIMARY KEY'"))
+                    {
+                        query.exec();
+                    }
+
+                    QString pr_key = query.first() ? query.value(0).toString() : "";
+                    qDebug() << pr_key;
+                    if (query.prepare("CREATE FULLTEXT INDEX ON "
+                                       + table + "(showme) "
+                                       "KEY INDEX " + pr_key
+                                       + " ON (ft) WITH (CHANGE_TRACKING AUTO)"))
+                    {
+                        query.exec();
+                    }
                 }
                 fields = "CAST(" + nameField + " AS varchar(250))";
-                expr = nameField + " like " + findString;
+                //expr = nameField;
                 table = nameTable;
             } else {
                 fields += "+ ' ' + CAST(" + nameField + " AS varchar(250))";
-                expr += " or " + nameField + " like " + findString;
+
             }
         }
     }
 
     if (table != "") {
-        m_mutex.lock();
-        if (m_count < MAX_COUNT) {
-            m_mutex.unlock();
-            findSql = sql.arg(fields).arg(table).arg(expr);
-            ExecFindQuery(findSql);
-        } else m_mutex.unlock();
+
+        findSql = sql.arg(table).arg(fields);
+        ExecFindQuery(findSql);
+        QSqlQuery query;
+        if (query.prepare("SELECT CONSTRAINT_NAME "
+                          "FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS "
+                          "WHERE TABLE_NAME='"+ table
+                          +"' AND CONSTRAINT_TYPE='PRIMARY KEY'"))
+        {
+            query.exec();
+        }
+        QString pr_key = query.first() ? query.value(0).toString() : "";
+        qDebug() << pr_key;
+        if (query.prepare("CREATE FULLTEXT INDEX ON "
+                          + table + "(showme) "
+                          "KEY INDEX " + pr_key
+                          + " ON (ft) WITH (CHANGE_TRACKING AUTO)"))
+        {
+            query.exec();
+        }
     }
 
 
@@ -132,14 +150,18 @@ void MainWindow::onExit(QString value)
 
 void MainWindow::ExecFindQuery(const QString &strQuery)
 {
-    QueryThread *queryThread = new QueryThread(QSqlDatabase::database());
-    queryThread->setQueryText(strQuery);
-    queryThread->setMutex(&m_mutex);
-    queryThread->setCount(&m_count);
+    //SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+    //WHERE TABLE_NAME='WORK_CM' AND CONSTRAINT_TYPE='PRIMARY KEY'
+    //CREATE FULLTEXT INDEX ON WORK_CM(showme)
+    //KEY INDEX PK_WORK_CM ON (ft) WITH (CHANGE_TRACKING AUTO)
 
-    connect(queryThread, &QueryThread::resultReady, this, &MainWindow::onExit);
-    connect(queryThread, &QueryThread::finished, queryThread, &QObject::deleteLater);
-    queryThread->start();
+    QSqlQuery query;
+    if (!query.prepare(strQuery))
+        return;
+    if (!query.exec()) {
+        return;
+    }
+
     if (ui->showQueryAction->isChecked())
         ui->logPlainText->appendPlainText(strQuery);
 }
