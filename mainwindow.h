@@ -7,12 +7,13 @@
 #include <QDateTime>
 #include <QMutex>
 
+#include "querymanagerthread.h"
+
 namespace Ui {
 class MainWindow;
 }
 
-const int MAX_COUNT = 10;
-
+class QueryManagerThread;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -22,21 +23,21 @@ public:
     ~MainWindow();
     void closeEvent(QCloseEvent *);
 
-private slots:
+public slots:
     void onActionExec();
     void onActionConnect();
-    void onExit(QString value);
+    void onResult(QString value);
+
+signals:
+    void stoped();
 
 private:
-    void ExecFindQuery(const QString &strQuery);
-
     Ui::MainWindow *ui;
     QStringListModel *m_model;
     QStringList m_list;
-    int m_count;
+
     QDateTime m_start;
     QDateTime m_finish;
-    QMutex m_mutex;
 };
 
 #endif // MAINWINDOW_H

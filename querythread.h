@@ -5,6 +5,9 @@
 #include <QObject>
 #include <QSqlDatabase>
 #include <QMutex>
+#include <QUuid>
+
+const int MAX_COUNT = 10;
 
 class QueryThread : public QThread
 {
@@ -19,6 +22,11 @@ public:
     void setCount(int *count);
     void setMutex(QMutex *value);
 
+    void setId(const QUuid &id);
+
+public slots:
+    void stop();
+
 signals:
     void resultReady(QString value);
 
@@ -32,7 +40,8 @@ private:
     QString m_queryText;
 
     QMutex *m_mutex;
-    int *m_count;
+    int    *m_count;
+    bool    m_stop;
 };
 
 #endif // QUERYTHREAD_H

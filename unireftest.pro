@@ -15,11 +15,13 @@ QT += sql
 SOURCES += main.cpp\
         mainwindow.cpp \
     dialogconnect.cpp \
-    querythread.cpp
+    querythread.cpp \
+    querymanagerthread.cpp
 
 HEADERS  += mainwindow.h \
     dialogconnect.h \
-    querythread.h
+    querythread.h \
+    querymanagerthread.h
 
 FORMS    += mainwindow.ui \
     dialogconnect.ui
