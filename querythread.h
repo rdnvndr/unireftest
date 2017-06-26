@@ -42,6 +42,7 @@ private:
     QMutex *m_mutex;
     int    *m_count;
     bool    m_stop;
+    int     m_session;
 };
 
 #endif // QUERYTHREAD_H

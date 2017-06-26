@@ -3,6 +3,7 @@
 #include <QSqlQuery>
 #include <QStringList>
 #include <QVariant>
+#include <QDebug>
 
 QueryThread::QueryThread(QSqlDatabase db, QObject *parent): QThread(parent)
 {
@@ -34,6 +35,14 @@ void QueryThread::run()
         }
 
         QSqlQuery *query = new QSqlQuery(db);
+
+        // Текущая сессия
+        query->exec("SELECT @@SPID");
+        if (query->next()) {
+            m_session = query->value(0).toInt();
+            qDebug() << QString("KILL %1").arg(m_session);
+        }
+
         if (!query->prepare(m_queryText))
             return;
         query->setForwardOnly(true);
@@ -81,5 +90,10 @@ void QueryThread::setMutex(QMutex *value)
 
 void QueryThread::stop()
 {
+    QSqlQuery query;
+    if (this->isRunning())
+    {
+        query.exec(QString("KILL %1").arg(m_session));
+    }
     m_stop = true;
 }
