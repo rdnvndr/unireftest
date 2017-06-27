@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_model = new QStringListModel(this);
     ui->resultTableView->setModel(m_model);
     connect(ui->findLineEdit, &QLineEdit::textChanged, this, &MainWindow::onActionExec);
+    connect(ui->poolAction, &QAction::triggered, this, &MainWindow::onShowPool);
 }
 
 MainWindow::~MainWindow()
@@ -75,6 +76,14 @@ void MainWindow::onActionConnect()
     windowConnect->exec();
     delete windowConnect;
     return;
+}
+
+void MainWindow::onShowPool()
+{
+     ui->logPlainText->appendPlainText(
+                 QString("\nПул менеджеров: %1\nПул запросов: %2\n")
+                 .arg(m_queue.count())
+                 .arg(m_tqueue.count()));
 }
 
 void MainWindow::onResult(QString value)

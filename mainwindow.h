@@ -27,6 +27,7 @@ public:
 public slots:
     void onActionExec();
     void onActionConnect();
+    void onShowPool();
     void onResult(QString value);
     void onFreeThread(QueryManagerThread *thread);
 

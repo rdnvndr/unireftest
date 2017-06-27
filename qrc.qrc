@@ -3,5 +3,6 @@
         <file alias="exit">icons/application-exit.svg</file>
         <file alias="connect">icons/dbconnect.svg</file>
         <file alias="exec">icons/media-playback-start.svg</file>
+        <file alias="pool">icons/utilities-system-monitor.svg</file>
     </qresource>
 </RCC>

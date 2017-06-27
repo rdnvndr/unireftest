@@ -76,7 +76,7 @@
     </property>
     <addaction name="runAction"/>
     <addaction name="separator"/>
-    <addaction name="showQueryAction"/>
+    <addaction name="poolAction"/>
    </widget>
    <addaction name="fileMenu"/>
    <addaction name="toolMenu"/>
@@ -99,6 +99,7 @@
    </attribute>
    <addaction name="connectAction"/>
    <addaction name="runAction"/>
+   <addaction name="poolAction"/>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <action name="runAction">
@@ -137,6 +138,15 @@
    </property>
    <property name="text">
     <string>Показать запрос</string>
+   </property>
+  </action>
+  <action name="poolAction">
+   <property name="icon">
+    <iconset resource="qrc.qrc">
+     <normaloff>:/pool</normaloff>:/pool</iconset>
+   </property>
+   <property name="text">
+    <string>Пул запросов</string>
    </property>
   </action>
  </widget>
