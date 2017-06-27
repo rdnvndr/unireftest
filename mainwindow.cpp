@@ -45,11 +45,24 @@ void MainWindow::onActionExec()
     m_list.clear();
     m_model->setStringList(m_list);
 
-    QueryManagerThread *queryThread = new QueryManagerThread(QSqlDatabase::database());
-    queryThread->setText(ui->findLineEdit->text());
+    QueryManagerThread *queryThread;
+    if (!m_queue.isEmpty())
+    {
+        queryThread = m_queue.dequeue();
+        disconnect(queryThread, &QueryManagerThread::resultReady, 0, 0);
+        disconnect(queryThread, &QueryManagerThread::freeThread, 0, 0);
+    } else {
+        queryThread = new QueryManagerThread(QSqlDatabase::database());
+        queryThread->setQueue(&m_tqueue);
+        connect(this, &MainWindow::stoped, queryThread, &QueryManagerThread::stop);
+        connect(this, &QObject::destroyed, queryThread, &QObject::deleteLater);
+    }
     connect(queryThread, &QueryManagerThread::resultReady,
             this, &MainWindow::onResult);
-    connect(this, &MainWindow::stoped, queryThread, &QueryManagerThread::stop);
+    connect(queryThread, &QueryManagerThread::freeThread,
+            this, &MainWindow::onFreeThread);
+    queryThread->setText(ui->findLineEdit->text());
+
 
     ui->logPlainText->appendPlainText("Запуск запроса\n");
     m_start = QDateTime::currentDateTime();
@@ -74,11 +87,14 @@ void MainWindow::onResult(QString value)
                 QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
 }
 
+void MainWindow::onFreeThread(QueryManagerThread *thread)
+{
+    m_queue.enqueue(thread);
+}
 
 void MainWindow::closeEvent(QCloseEvent *)
 {
-//    if (QSqlDatabase::database().isOpen()) {
-//        QSqlDatabase::database().close();
-//        QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
-//    }
+    if (QSqlDatabase::contains(QSqlDatabase::defaultConnection)) {
+        QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
+    }
 }

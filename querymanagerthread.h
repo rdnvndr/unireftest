@@ -6,12 +6,18 @@
 #include <QSqlDatabase>
 #include <QMutex>
 #include <QSemaphore>
+#include <QQueue>
+#include <QSqlQuery>
+
+#include "querythread.h"
 
 class QueryManagerThread : public QThread
 {
     Q_OBJECT
 public:
     explicit QueryManagerThread(QSqlDatabase db, QObject * parent = 0);
+    virtual ~QueryManagerThread();
+
     void run();
 
     void execQuery(const QString &strQuery);
@@ -19,16 +25,21 @@ public:
     QString text() const;
     void setText(const QString &text);
 
+    void setQueue(QQueue<QueryThread *> *queue);
+
 public slots:
     void start();
     void stop();
 
+    bool dbConnect();
     void finishQuery();
     void onResult(QString value);
+    void onFreeThread(QueryThread *thread);
 
 signals:
     void resultReady(QString value);
     void stoped();
+    void freeThread(QueryManagerThread *thread);
 
 private:
     QString m_driverName;
@@ -44,6 +55,9 @@ private:
     bool   m_stop;
 
     QSemaphore m_threadCount;
+    QQueue<QueryThread *> *m_queue;
+    QString connName;
+    QSqlQuery query;
 };
 
 #endif // QUERYMANAGERTHREAD_H
