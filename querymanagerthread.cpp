@@ -1,5 +1,6 @@
 #include "querymanagerthread.h"
 #include <QVariant>
+#include <QMutexLocker>
 
 QueryManagerThread::QueryManagerThread(QSqlDatabase db, QObject *parent): QThread(parent)
 {
@@ -9,12 +10,14 @@ QueryManagerThread::QueryManagerThread(QSqlDatabase db, QObject *parent): QThrea
     m_port = db.port();
     m_userName = db.userName();
     m_password = db.password();
-    connName = "";
+    m_connName = "";
+    m_sql = "SELECT TOP " + QString("%1").arg(MAX_COUNT)
+            + " GUID, %1 AS NAME FROM %2 WHERE %3\n";
 }
 
 QueryManagerThread::~QueryManagerThread()
 {
-    QSqlDatabase::removeDatabase(connName);
+    QSqlDatabase::removeDatabase(m_connName);
 }
 
 QString QueryManagerThread::text() const
@@ -42,11 +45,11 @@ void QueryManagerThread::stop()
 
 bool QueryManagerThread::dbConnect()
 {
-    if (connName.isEmpty()) {
+    if (m_connName.isEmpty()) {
         QThread* curThread = QThread::currentThread();
-        connName = QString("RTP0%1").arg(
+        m_connName = QString("RTP0%1").arg(
                     reinterpret_cast<qlonglong>(curThread), 0, 16);
-        QSqlDatabase db = QSqlDatabase::addDatabase(m_driverName, connName);
+        QSqlDatabase db = QSqlDatabase::addDatabase(m_driverName, m_connName);
         db.setDatabaseName(m_databaseName);
         db.setHostName(m_hostName);
         db.setPort(m_port);
@@ -55,14 +58,14 @@ bool QueryManagerThread::dbConnect()
         if (!db.open()) {
             return false;
         }
-        query = QSqlQuery(db);
-        query.prepare(
+        m_query = QSqlQuery(db);
+        m_query.prepare(
                     "SELECT BO_CLASSES.NAMECLASS AS NAMECLASS,\n"
-                    "BO_CLASSES.NAMETABLE AS NAMETABLE,\n"
-                    "BO_CLASSES.FGUID AS CLS_FGUID,\n"
-                    "BO_ATTR_CLASSES.NAMEATTR AS NAMEATTR,\n"
-                    "BO_ATTR_CLASSES.NAMEFIELD AS NAMEFIELD,\n"
-                    "BO_ATTR_CLASSES.NAMESCREEN AS NAMESCREEN\n"
+                           "BO_CLASSES.NAMETABLE AS NAMETABLE,\n"
+                           "BO_CLASSES.FGUID AS CLS_FGUID,\n"
+                           "BO_ATTR_CLASSES.NAMEATTR AS NAMEATTR,\n"
+                           "BO_ATTR_CLASSES.NAMEFIELD AS NAMEFIELD,\n"
+                           "BO_ATTR_CLASSES.NAMESCREEN AS NAMESCREEN\n"
                     "FROM BO_ATTR_CLASSES \n"
                     "LEFT OUTER JOIN BO_CLASSES\n"
                     "ON BO_CLASSES.GUID = BO_ATTR_CLASSES.FGUID\n"
@@ -71,9 +74,16 @@ bool QueryManagerThread::dbConnect()
                     "AND not t3.NAMEFIELD is NULL\n"
                     "WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1'\n"
                     "ORDER BY CLS_FGUID, NAMETABLE");
-        query.setForwardOnly(true);
+        m_query.setForwardOnly(false);
+        return m_query.exec();
     }
     return true;
+}
+
+bool QueryManagerThread::checkStop()
+{
+    QMutexLocker locker(&m_mutex);
+    return (m_count >= MAX_COUNT || m_stop);
 }
 
 void QueryManagerThread::finishQuery()
@@ -130,39 +140,33 @@ void QueryManagerThread::execQuery(const QString &strQuery)
 void QueryManagerThread::run()
 {
     m_stop = false;
+
     if (!dbConnect())
         return;
 
-    query.exec();
+    QString findString = "'%" + m_text.simplified().replace(' ', '%') + "%'";
 
-    QString sql("SELECT TOP " + QString("%1").arg(MAX_COUNT)
-                + " GUID, %1 AS NAME FROM %2 WHERE %3\n");
-
-    QString findString = "'%"
-            + m_text.simplified().replace(' ', '%')
-            + "%'";
-    QString findSql("");
     QString fields("");
     QString expr("");
     QString table("");
 
-    while (query.next()) {
-        m_mutex.lock();
-        if (m_count < MAX_COUNT && !m_stop) {
-            m_mutex.unlock();
-        } else {
-            m_mutex.unlock();
-            break;
+    QString nameTable;
+    QString nameField;
+
+    for (bool isExist = m_query.first(); isExist; isExist = m_query.next())
+    {
+        if (checkStop()) {
+            finishQuery();
+            return;
         }
-        QString nameTable = query.value("NAMETABLE").toString();
-        QString nameField = query.value("NAMEFIELD").toString();
+
+        nameTable = m_query.value("NAMETABLE").toString();
+        nameField = m_query.value("NAMEFIELD").toString();
 
         if (nameField != "SCREEN_NAME" && !nameField.isEmpty()) {
             if (table != nameTable) {
-                if (table != "") {
-                    findSql = sql.arg(fields).arg(table).arg(expr);
-                    execQuery(findSql);
-                }
+                if (table != "")
+                    execQuery(m_sql.arg(fields).arg(table).arg(expr));
                 fields = "CAST(" + nameField + " AS varchar(250))";
                 expr = nameField + " like " + findString;
                 table = nameTable;
@@ -173,14 +177,8 @@ void QueryManagerThread::run()
         }
     }
 
-    if (table != "") {
-        m_mutex.lock();
-        if (m_count < MAX_COUNT && !m_stop) {
-            m_mutex.unlock();
-            findSql = sql.arg(fields).arg(table).arg(expr);
-            execQuery(findSql);
-        } else m_mutex.unlock();
-    }
+    if (table != "")
+        execQuery(m_sql.arg(fields).arg(table).arg(expr));
 
     finishQuery();
 }

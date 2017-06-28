@@ -11,12 +11,12 @@ QueryThread::QueryThread(QSqlDatabase db, QObject *parent): QThread(parent)
     m_userName = db.userName();
     m_password = db.password();
     m_queryText = "";
-    connName = "";
+    m_connName = "";
 }
 
 QueryThread::~QueryThread()
 {
-    QSqlDatabase::removeDatabase(connName);
+    QSqlDatabase::removeDatabase(m_connName);
 }
 
 void QueryThread::run()
@@ -25,23 +25,16 @@ void QueryThread::run()
     if (!dbConnect())
         return;
 
-    if (!query.prepare(m_queryText))
+    if (!m_query.prepare(m_queryText))
         return;
 
-    if (!query.exec())
+    if (!m_query.exec())
         return;
 
-    while (query.next()) {
-        m_mutex->lock();
-        if (*m_count < MAX_COUNT && !m_stop) {
-            (*m_count)++;
-            m_mutex->unlock();
-            emit resultReady(query.value("NAME").toString());
-        } else {
-            m_mutex->unlock();
+    while (m_query.next()) {
+        if (checkStop())
             break;
-        }
-
+        emit resultReady(m_query.value("NAME").toString());
     }
     emit freeThread(this);
 }
@@ -68,12 +61,12 @@ void QueryThread::setMutex(QMutex *value)
 
 bool QueryThread::dbConnect()
 {
-    if (connName.isEmpty()) {
+    if (m_connName.isEmpty()) {
         QThread* curThread = QThread::currentThread();
-        connName = QString("RTP0%1").arg(
+        m_connName = QString("RTP0%1").arg(
                     reinterpret_cast<qlonglong>(curThread), 0, 16);
 
-        QSqlDatabase db = QSqlDatabase::addDatabase(m_driverName, connName);
+        QSqlDatabase db = QSqlDatabase::addDatabase(m_driverName, m_connName);
         db.setDatabaseName(m_databaseName);
         db.setHostName(m_hostName);
         db.setPort(m_port);
@@ -81,8 +74,18 @@ bool QueryThread::dbConnect()
         db.setPassword(m_password);
         if (!db.open())
             return false;
-        query = QSqlQuery(db);
-        query.setForwardOnly(true);
+        m_query = QSqlQuery(db);
+        m_query.setForwardOnly(true);
+    }
+    return true;
+}
+
+bool QueryThread::checkStop()
+{
+    QMutexLocker locker(m_mutex);
+    if (*m_count < MAX_COUNT && !m_stop) {
+        (*m_count)++;
+        return false;
     }
     return true;
 }

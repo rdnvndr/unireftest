@@ -26,6 +26,7 @@ public:
     void setMutex(QMutex *value);
 
     bool dbConnect();
+    bool checkStop();
 
 public slots:
     void stop();
@@ -47,8 +48,8 @@ private:
     int    *m_count;
     bool    m_stop;
 
-    QString connName;
-    QSqlQuery query;
+    QString m_connName;
+    QSqlQuery m_query;
 };
 
 #endif // QUERYTHREAD_H

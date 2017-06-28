@@ -26,12 +26,13 @@ public:
     void setText(const QString &text);
 
     void setQueue(QQueue<QueryThread *> *queue);
+    bool dbConnect();
+    bool checkStop();
 
 public slots:
     void start();
     void stop();
 
-    bool dbConnect();
     void finishQuery();
     void onResult(QString value);
     void onFreeThread(QueryThread *thread);
@@ -49,6 +50,7 @@ private:
     QString m_userName;
     QString m_password;
     QString m_text;
+    QString m_sql;
 
     QMutex m_mutex;
     int    m_count;
@@ -56,8 +58,8 @@ private:
 
     QSemaphore m_threadCount;
     QQueue<QueryThread *> *m_queue;
-    QString connName;
-    QSqlQuery query;
+    QString m_connName;
+    QSqlQuery m_query;
 };
 
 #endif // QUERYMANAGERTHREAD_H
