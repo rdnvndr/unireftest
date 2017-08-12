@@ -88,7 +88,30 @@ void MainWindow::onShowPool()
 
 void MainWindow::onResult(QString value)
 {
-    m_list.append(value);
+    if (ui->sortAction->isChecked()) {
+        unsigned int left = 0;
+        unsigned int right = m_list.count();
+        unsigned int mid = 0;
+        QString listValue;
+
+        while ( left < right) {
+            mid = trunc((left + right - 1) / 2);
+            listValue = m_list.value(mid);
+
+            if (value == listValue)
+                break;
+
+            if (QString::compare(value, listValue, Qt::CaseInsensitive) < 0) {
+                right = mid;
+            } else {
+                ++mid;
+                left = mid;
+            }
+        }
+        m_list.insert(mid, value);
+    } else {
+        m_list.append(value);
+    }
     m_model->setStringList(m_list);
     m_finish = QDateTime::currentDateTime();
     int msecs = m_finish.time().msecsTo(m_start.time());
