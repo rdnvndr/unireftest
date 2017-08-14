@@ -128,13 +128,26 @@ void MainWindow::onResult(QString value)
 
 void MainWindow::onFreeThread(QueryManagerThread *thread, bool interruption)
 {
+    QString text = ui->findLineEdit->text();
+    int textCount = text.count();
+    int pos = -1;
 
-    if (thread->text() == ui->findLineEdit->text()
-            && ui->cacheAction->isChecked()
+    if (ui->cacheAction->isChecked() && thread->text() == text
             && (!interruption || m_list.count() == MAX_COUNT))
     {
-        QStringList *list = new QStringList(m_list);
-        m_cache.insert(ui->findLineEdit->text(), list);
+        int i;
+        m_cache.insert(text, new QStringList(m_list));
+
+        for (i = textCount-1; i > 0; --i) {
+            QStringList *cacheValue = m_cache.object(text.left(i));
+            if (cacheValue && *(cacheValue) == m_list)
+                    pos = i;
+        }
+
+        if (pos != -1) {
+            for (i = textCount-1; i >= pos; --i)
+                m_cache.insert(text.left(i), new QStringList(m_list));
+        }
     }
     m_queue.enqueue(thread);
 }
