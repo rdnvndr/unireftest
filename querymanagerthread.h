@@ -40,7 +40,7 @@ public slots:
 signals:
     void resultReady(QString value);
     void stoped();
-    void freeThread(QueryManagerThread *thread);
+    void freeThread(QueryManagerThread *thread, bool interruption);
 
 private:
     QString m_driverName;

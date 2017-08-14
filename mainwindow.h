@@ -7,6 +7,7 @@
 #include <QDateTime>
 #include <QMutex>
 #include <QQueue>
+#include <QCache>
 
 #include "querymanagerthread.h"
 
@@ -29,7 +30,7 @@ public slots:
     void onActionConnect();
     void onShowPool();
     void onResult(QString value);
-    void onFreeThread(QueryManagerThread *thread);
+    void onFreeThread(QueryManagerThread *thread, bool interruption);
 
 signals:
     void stoped();
@@ -44,6 +45,8 @@ private:
 
     QQueue<QueryManagerThread *> m_queue;
     QQueue<QueryThread *> m_tqueue;
+
+    QCache<QString, QStringList> m_cache;
 };
 
 #endif // MAINWINDOW_H

@@ -43,6 +43,13 @@ void MainWindow::onActionExec()
     }
 
     emit stoped();
+    if (ui->cacheAction->isChecked()) {
+        QStringList *list = m_cache.object(ui->findLineEdit->text());
+        if (list) {
+            m_model->setStringList(*list);
+            return;
+        }
+    }
     m_list.clear();
     m_model->setStringList(m_list);
 
@@ -119,8 +126,16 @@ void MainWindow::onResult(QString value)
                 QString("\nЗапрос выполнен за %1 мсек").arg(abs(msecs)));
 }
 
-void MainWindow::onFreeThread(QueryManagerThread *thread)
+void MainWindow::onFreeThread(QueryManagerThread *thread, bool interruption)
 {
+
+    if (thread->text() == ui->findLineEdit->text()
+            && ui->cacheAction->isChecked()
+            && (!interruption || m_list.count() == MAX_COUNT))
+    {
+        QStringList *list = new QStringList(m_list);
+        m_cache.insert(ui->findLineEdit->text(), list);
+    }
     m_queue.enqueue(thread);
 }
 

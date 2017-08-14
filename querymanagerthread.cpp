@@ -90,7 +90,7 @@ void QueryManagerThread::finishQuery()
 {
     m_threadCount.acquire();
     if (m_threadCount.available() == 0)
-        emit freeThread(this);
+        emit freeThread(this, m_stop);
 }
 
 void QueryManagerThread::onResult(QString value)

@@ -76,8 +76,10 @@
     </property>
     <addaction name="runAction"/>
     <addaction name="separator"/>
-    <addaction name="poolAction"/>
     <addaction name="sortAction"/>
+    <addaction name="cacheAction"/>
+    <addaction name="separator"/>
+    <addaction name="poolAction"/>
    </widget>
    <addaction name="fileMenu"/>
    <addaction name="toolMenu"/>
@@ -162,6 +164,17 @@
    </property>
    <property name="text">
     <string>Сортировка</string>
+   </property>
+  </action>
+  <action name="cacheAction">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Кэшеирование</string>
    </property>
   </action>
  </widget>
