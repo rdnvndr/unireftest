@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     connect(ui->connectAction, &QAction::triggered, this, &MainWindow::onActionConnect);
-    connect(ui->runAction, &QAction::triggered, this, &MainWindow::onActionExec);
+    connect(ui->runAction, &QAction::triggered, this, &MainWindow::onRunAction);
     connect(ui->exitAction, &QAction::triggered, this, &MainWindow::close);
     m_model = new QStringListModel(this);
     ui->resultTableView->setModel(m_model);
@@ -75,6 +75,12 @@ void MainWindow::onActionExec()
     ui->logPlainText->appendPlainText("Запуск запроса\n");
     m_start = QDateTime::currentDateTime();
     queryThread->start();
+}
+
+void MainWindow::onRunAction()
+{
+    m_cache.remove(ui->findLineEdit->text());
+    onActionExec();
 }
 
 void MainWindow::onActionConnect()

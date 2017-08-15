@@ -27,6 +27,7 @@ public:
 
 public slots:
     void onActionExec();
+    void onRunAction();
     void onActionConnect();
     void onShowPool();
     void onResult(QString value);
