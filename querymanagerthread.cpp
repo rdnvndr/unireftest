@@ -2,14 +2,20 @@
 #include <QVariant>
 #include <QMutexLocker>
 
-QueryManagerThread::QueryManagerThread(QSqlDatabase db, QObject *parent): QThread(parent)
+QueryManagerThread::QueryManagerThread(const QString &driverName,
+                                       const QString &databaseName,
+                                       const QString &hostName,
+                                       const int     &port,
+                                       const QString &userName,
+                                       const QString &password,
+                                       QObject *parent): QThread(parent)
 {
-    m_driverName = db.driverName();
-    m_databaseName = db.databaseName();
-    m_hostName = db.hostName();
-    m_port = db.port();
-    m_userName = db.userName();
-    m_password = db.password();
+    m_driverName = driverName;
+    m_databaseName = databaseName;
+    m_hostName = hostName;
+    m_port = port;
+    m_userName = userName;
+    m_password = password;
     m_connName = "";
     m_sql = "SELECT TOP " + QString("%1").arg(MAX_COUNT)
             + " GUID, %1 AS NAME FROM %2 WHERE %3\n";
@@ -58,8 +64,8 @@ bool QueryManagerThread::dbConnect()
         if (!db.open()) {
             return false;
         }
-        m_query = QSqlQuery(db);
-        m_query.prepare(
+        m_query = new QSqlQuery(db);
+        m_query->prepare(
                     "SELECT BO_CLASSES.NAMECLASS AS NAMECLASS,\n"
                            "BO_CLASSES.NAMETABLE AS NAMETABLE,\n"
                            "BO_CLASSES.FGUID AS CLS_FGUID,\n"
@@ -74,8 +80,8 @@ bool QueryManagerThread::dbConnect()
                     "AND not t3.NAMEFIELD is NULL\n"
                     "WHERE substring(BO_ATTR_CLASSES.ARRAYMDATA, 3,1) = '1'\n"
                     "ORDER BY CLS_FGUID, NAMETABLE");
-        m_query.setForwardOnly(false);
-        return m_query.exec();
+        m_query->setForwardOnly(false);
+        return m_query->exec();
     }
     return true;
 }
@@ -118,7 +124,8 @@ void QueryManagerThread::execQuery(const QString &strQuery)
         disconnect(queryThread, &QueryThread::resultReady, 0, 0);
         disconnect(queryThread, &QueryThread::freeThread, 0, 0);
     } else {
-        queryThread = new QueryThread(QSqlDatabase::database());
+        queryThread = new QueryThread(m_driverName, m_databaseName, m_hostName,
+                                      m_port, m_userName, m_password);
         connect(this, &QObject::destroyed, queryThread, &QObject::deleteLater);
     }
     queryThread->setMutex(&m_mutex);
@@ -153,15 +160,15 @@ void QueryManagerThread::run()
     QString nameTable;
     QString nameField;
 
-    for (bool isExist = m_query.first(); isExist; isExist = m_query.next())
+    for (bool isExist = m_query->first(); isExist; isExist = m_query->next())
     {
         if (checkStop()) {
             finishQuery();
             return;
         }
 
-        nameTable = m_query.value("NAMETABLE").toString();
-        nameField = m_query.value("NAMEFIELD").toString();
+        nameTable = m_query->value("NAMETABLE").toString();
+        nameField = m_query->value("NAMEFIELD").toString();
 
         if (nameField != "SCREEN_NAME" && !nameField.isEmpty()) {
             if (table != nameTable) {

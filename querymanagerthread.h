@@ -15,7 +15,12 @@ class QueryManagerThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit QueryManagerThread(QSqlDatabase db, QObject * parent = 0);
+    explicit QueryManagerThread(const QString &driverName,
+                                const QString &databaseName,
+                                const QString &hostName, const int &port,
+                                const QString &userName,
+                                const QString &password,
+                                QObject * parent = 0);
     virtual ~QueryManagerThread();
 
     void run();
@@ -59,7 +64,7 @@ private:
     QSemaphore m_threadCount;
     QQueue<QueryThread *> *m_queue;
     QString m_connName;
-    QSqlQuery m_query;
+    QSqlQuery *m_query;
 };
 
 #endif // QUERYMANAGERTHREAD_H

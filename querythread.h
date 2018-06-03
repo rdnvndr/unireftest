@@ -14,7 +14,10 @@ class QueryThread : public QThread
 {
     Q_OBJECT
 public:
-    explicit QueryThread(QSqlDatabase db, QObject * parent = 0);
+    explicit QueryThread(const QString &driverName, const QString &databaseName,
+                         const QString &hostName,   const int     &port,
+                         const QString &userName,   const QString &password,
+                         QObject * parent = 0);
     virtual ~QueryThread();
 
     void run();
@@ -49,7 +52,7 @@ private:
     bool    m_stop;
 
     QString m_connName;
-    QSqlQuery m_query;
+    QSqlQuery *m_query;
 };
 
 #endif // QUERYTHREAD_H

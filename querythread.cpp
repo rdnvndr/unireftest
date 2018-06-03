@@ -2,20 +2,27 @@
 
 #include <QVariant>
 
-QueryThread::QueryThread(QSqlDatabase db, QObject *parent): QThread(parent)
+QueryThread::QueryThread(const QString &driverName,
+                         const QString &databaseName,
+                         const QString &hostName,
+                         const int     &port,
+                         const QString &userName,
+                         const QString &password,
+                         QObject *parent): QThread(parent)
 {
-    m_driverName = db.driverName();
-    m_databaseName = db.databaseName();
-    m_hostName = db.hostName();
-    m_port = db.port();
-    m_userName = db.userName();
-    m_password = db.password();
+    m_driverName = driverName;
+    m_databaseName = databaseName;
+    m_hostName = hostName;
+    m_port = port;
+    m_userName = userName;
+    m_password = password;
     m_queryText = "";
     m_connName = "";
 }
 
 QueryThread::~QueryThread()
 {
+    delete m_query;
     QSqlDatabase::removeDatabase(m_connName);
 }
 
@@ -25,16 +32,16 @@ void QueryThread::run()
     if (!dbConnect())
         return;
 
-    if (!m_query.prepare(m_queryText))
+    if (!m_query->prepare(m_queryText))
         return;
 
-    if (!m_query.exec())
+    if (!m_query->exec())
         return;
 
-    while (m_query.next()) {
+    while (m_query->next()) {
         if (checkStop())
             break;
-        emit resultReady(m_query.value("NAME").toString());
+        emit resultReady(m_query->value("NAME").toString());
     }
     emit freeThread(this);
 }
@@ -74,8 +81,8 @@ bool QueryThread::dbConnect()
         db.setPassword(m_password);
         if (!db.open())
             return false;
-        m_query = QSqlQuery(db);
-        m_query.setForwardOnly(true);
+        m_query = new QSqlQuery(db);
+        m_query->setForwardOnly(true);
     }
     return true;
 }

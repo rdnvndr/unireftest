@@ -60,7 +60,10 @@ void MainWindow::onActionExec()
         disconnect(queryThread, &QueryManagerThread::resultReady, 0, 0);
         disconnect(queryThread, &QueryManagerThread::freeThread, 0, 0);
     } else {
-        queryThread = new QueryManagerThread(QSqlDatabase::database());
+        QSqlDatabase db = QSqlDatabase::database();
+        queryThread = new QueryManagerThread(db.driverName(), db.databaseName(),
+                                             db.hostName(), db.port(),
+                                             db.userName(), db.password());
         queryThread->setQueue(&m_tqueue);
         connect(this, &MainWindow::stoped, queryThread, &QueryManagerThread::stop);
         connect(this, &QObject::destroyed, queryThread, &QObject::deleteLater);
